@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sleep Wearable Price vs Accuracy Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: rgba(255,255,255,.075);
+      --panel2: rgba(255,255,255,.11);
+      --text: #eef2ff;
+      --muted: #aab3cf;
+      --line: rgba(255,255,255,.14);
+      --gold: #f5c542;
+      --green: #34d399;
+      --blue: #60a5fa;
+      --red: #fb7185;
+      --purple: #a78bfa;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top left, rgba(96,165,250,.22), transparent 36%),
+                  radial-gradient(circle at top right, rgba(167,139,250,.18), transparent 38%),
+                  linear-gradient(135deg, #070a13 0%, var(--bg) 55%, #111827 100%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    .wrap { max-width: 1360px; margin: 0 auto; padding: 28px 18px 60px; }
+    header { display: grid; grid-template-columns: 1.2fr .8fr; gap: 20px; align-items: stretch; margin-bottom: 22px; }
+    .hero, .note, .card, .chart-card, .table-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      box-shadow: 0 24px 80px rgba(0,0,0,.32);
+      backdrop-filter: blur(10px);
+    }
+    .hero { padding: 28px; }
+    h1 { font-size: clamp(2rem, 4vw, 4.2rem); line-height: .95; letter-spacing: -.055em; margin: 0 0 14px; }
+    h2 { margin: 0 0 14px; font-size: 1.25rem; }
+    h3 { margin: 0 0 10px; font-size: 1rem; }
+    p { color: var(--muted); line-height: 1.5; margin: 0 0 12px; }
+    .badge { display: inline-flex; gap: 8px; align-items: center; padding: 7px 10px; border-radius: 999px; background: rgba(245,197,66,.13); color: #ffe694; border: 1px solid rgba(245,197,66,.25); font-weight: 700; font-size: .8rem; margin-bottom: 14px; }
+    .note { padding: 22px; }
+    .note strong { color: #fff; }
+    .controls { display: grid; grid-template-columns: repeat(4, minmax(160px, 1fr)); gap: 14px; margin: 18px 0; }
+    label { display:block; color: var(--muted); font-size: .78rem; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; margin: 0 0 6px; }
+    select, input {
+      width: 100%; border: 1px solid var(--line); border-radius: 14px; background: rgba(0,0,0,.28); color: var(--text); padding: 12px 14px; font-size: .95rem; outline: none;
+    }
+    select:focus, input:focus { border-color: rgba(96,165,250,.85); }
+    .stats { display:grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin: 16px 0 22px; }
+    .card { padding: 18px; }
+    .metric { font-size: 1.85rem; font-weight: 900; letter-spacing: -.04em; }
+    .small { font-size: .82rem; color: var(--muted); }
+    .grid { display: grid; grid-template-columns: 1.3fr .7fr; gap: 18px; }
+    .chart-card { padding: 20px; min-height: 480px; }
+    .chart-wrap { position: relative; height: 420px; }
+    .side-list { display: grid; gap: 12px; }
+    .device-card { background: rgba(255,255,255,.055); border: 1px solid var(--line); border-radius: 18px; padding: 15px; cursor:pointer; transition: .18s ease; }
+    .device-card:hover { transform: translateY(-2px); background: rgba(255,255,255,.09); }
+    .device-card.active { border-color: var(--gold); box-shadow: 0 0 0 1px rgba(245,197,66,.35) inset; }
+    .device-row { display:flex; justify-content:space-between; gap:10px; align-items:center; }
+    .pill { padding: 4px 8px; border-radius: 999px; font-size: .72rem; font-weight: 800; color: #07111f; }
+    .pill.high { background: var(--green); }
+    .pill.med { background: var(--gold); }
+    .pill.low { background: var(--red); }
+    .pill.unknown { background: #94a3b8; }
+    .price { color: #dbeafe; font-weight: 900; }
+    .section { margin-top: 20px; }
+    .tabs { display:flex; flex-wrap:wrap; gap:10px; margin: 22px 0 14px; }
+    .tab { border: 1px solid var(--line); background: rgba(255,255,255,.06); color: var(--muted); padding: 10px 13px; border-radius: 999px; cursor: pointer; font-weight: 800; }
+    .tab.active { background: rgba(96,165,250,.2); color: #fff; border-color: rgba(96,165,250,.7); }
+    .table-card { padding: 18px; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 980px; }
+    th, td { padding: 12px 10px; text-align: left; border-bottom: 1px solid rgba(255,255,255,.09); vertical-align: top; }
+    th { color: #dbeafe; font-size: .77rem; text-transform: uppercase; letter-spacing: .08em; }
+    td { color: #e5e7eb; }
+    td.muted { color: var(--muted); }
+    .bar { height: 8px; background: rgba(255,255,255,.11); border-radius: 999px; overflow: hidden; min-width: 90px; }
+    .bar > span { display:block; height: 100%; background: linear-gradient(90deg, var(--blue), var(--green)); border-radius: 999px; }
+    .source { font-size: .78rem; color: var(--muted); }
+    .warn { color: #fecdd3; }
+    .good { color: #bbf7d0; }
+    .footer { margin-top: 22px; padding: 18px; border: 1px dashed rgba(255,255,255,.22); border-radius: 18px; color: var(--muted); }
+    @media (max-width: 980px) { header, .grid { grid-template-columns: 1fr; } .controls, .stats { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 620px) { .controls, .stats { grid-template-columns: 1fr; } .chart-wrap { height: 360px; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <section class="hero">
+        <div class="badge">💅 Data over marketing</div>
+        <h1>Sleep trackers: price vs accuracy</h1>
+        <p>Interactive comparison of the wearables we discussed, using online prices I verified plus CircaTest / published-validation summaries. Use the metric selector to switch between sleep/wake accuracy, PSG agreement, specificity, sensitivity, and total 2-year cost.</p>
+      </section>
+      <aside class="note">
+        <h2>Read this first</h2>
+        <p><strong>Not all numbers mean the same thing.</strong> “PSG agreement” is not directly interchangeable with sensitivity/specificity or sleep-stage kappa. I show the metric source and confidence so we do not pretend precision where the literature is messy.</p>
+        <p><strong>Best use:</strong> compare price-to-evidence, then click a device for caveats.</p>
+      </aside>
+    </header>
+
+    <div class="controls">
+      <div><label>Y-axis metric</label><select id="metricSelect"></select></div>
+      <div><label>Device class</label><select id="classFilter"><option value="all">All</option><option value="band">Bands</option><option value="watch">Watches</option><option value="ring">Rings</option></select></div>
+      <div><label>Evidence filter</label><select id="evidenceFilter"><option value="all">All evidence levels</option><option value="direct">Direct model/close PSG evidence</option><option value="indirect">Includes indirect/predecessor evidence</option></select></div>
+      <div><label>Max 2-year cost</label><input id="maxCost" type="number" min="0" value="600" /></div>
+    </div>
+
+    <div class="stats">
+      <div class="card"><div class="small">Best value on selected metric</div><div id="bestValue" class="metric">-</div></div>
+      <div class="card"><div class="small">Cheapest visible option</div><div id="cheapest" class="metric">-</div></div>
+      <div class="card"><div class="small">Highest selected accuracy</div><div id="highest" class="metric">-</div></div>
+      <div class="card"><div class="small">Devices shown</div><div id="count" class="metric">-</div></div>
+    </div>
+
+    <main class="grid">
+      <section class="chart-card">
+        <h2 id="chartTitle">Price vs accuracy</h2>
+        <div class="chart-wrap"><canvas id="scatterChart"></canvas></div>
+      </section>
+      <aside class="chart-card">
+        <h2>Device notes</h2>
+        <div id="deviceList" class="side-list"></div>
+      </aside>
+    </main>
+
+    <section class="section">
+      <div class="tabs">
+        <button class="tab active" data-tab="accuracy">Accuracy events</button>
+        <button class="tab" data-tab="cost">Cost details</button>
+        <button class="tab" data-tab="sources">Sources & caveats</button>
+      </div>
+      <div id="tabContent" class="table-card"></div>
+    </section>
+
+    <div class="footer">
+      <strong>Method note:</strong> prices are current online prices I observed during this session where possible. Accuracy data is a normalized buyer-facing view from CircaTest pages and the peer-reviewed studies they link, especially Chinoy 2021, Haghayegh 2019, Concheiro-Moscoso 2023, Lee 2025 meta-analysis, and device-specific CircaTest summaries. Unknown values are deliberately left blank rather than filled with fake confidence.
+    </div>
+  </div>
+
+<script>
+const devices = [
+  {
+    name: 'Fitbit Charge 6', cls: 'band', price: 99.95, listPrice: 159.95, monthly: 9.99, twoYear: 339.71,
+    battery: '7d', weight: '30g', evidence: 'direct', confidence: 'medium',
+    psgAgreement: 86, sleepWakeAccuracy: 86, sensitivity: 95, specificity: 45, stageScore: 41, tstBiasAbs: 10, efficiencyScore: 84,
+    source: 'CircaTest Charge 6 page: Fitbit meta sleep/wake 86%; Charge 5 kappa 0.41; Haghayegh 2019, Schyvens 2025, Chinoy 2021. Price verified Google Store sale $99.95.',
+    note: 'Best value if sleep is the priority. Staging is still approximate, but the evidence base is stronger than most cheap bands.'
+  },
+  {
+    name: 'Xiaomi Smart Band 9', cls: 'band', price: 39.99, listPrice: 50, monthly: 0, twoYear: 39.99,
+    battery: '21d', weight: '16g', evidence: 'indirect', confidence: 'low',
+    psgAgreement: null, sleepWakeAccuracy: 78, sensitivity: 89, specificity: 35, stageScore: 22, tstBiasAbs: null, efficiencyScore: null,
+    source: 'CircaTest Smart Band 9 page: no peer-reviewed PSG validation specific to Band 9. Older Mi Band 5 cited: 78% accuracy, 89% sensitivity, 35% specificity, kappa 0.22. Price observed Amazon ~$39.99.',
+    note: 'Excellent cheap experiment. Accuracy numbers come from predecessor evidence, not the exact Band 9. Use for trends, not clinical staging.'
+  },
+  {
+    name: 'Oura Ring Gen 3', cls: 'ring', price: 299, listPrice: 299, monthly: 5.99, twoYear: 442.76,
+    battery: '6d', weight: '5g', evidence: 'direct', confidence: 'medium',
+    psgAgreement: 79, sleepWakeAccuracy: 79, sensitivity: 94, specificity: 48, stageScore: 51, tstBiasAbs: 20, efficiencyScore: 80,
+    source: 'CircaTest compare: PSG agreement 79%, $299 + $5.99/mo, 2-year $442.76. Device-specific validation exists but varies by generation/algorithm.',
+    note: 'Very strong comfort and recovery tracker. Subscription hurts value. Best if you hate sleeping with a watch.'
+  },
+  {
+    name: 'Oura Ring 4', cls: 'ring', price: 349, listPrice: 349, monthly: 5.99, twoYear: 492.76,
+    battery: '7d', weight: '4g', evidence: 'indirect', confidence: 'medium',
+    psgAgreement: null, sleepWakeAccuracy: null, sensitivity: null, specificity: null, stageScore: null, tstBiasAbs: null, efficiencyScore: null,
+    source: 'CircaTest compare: See source for PSG agreement, $349 + $5.99/mo, 2-year $492.76. Oura site price verified $349 and membership $5.99/mo.',
+    note: 'Likely improved hardware, but exact independent PSG number was not visible in the comparison table. Treat Gen 3 evidence as lineage, not proof.'
+  },
+  {
+    name: 'Apple Watch Series 11', cls: 'watch', price: 399, listPrice: 399, monthly: 0, twoYear: 399,
+    battery: '1d', weight: '30g', evidence: 'indirect', confidence: 'medium',
+    psgAgreement: null, sleepWakeAccuracy: 89, sensitivity: 95, specificity: 60, stageScore: null, tstBiasAbs: 10, efficiencyScore: null,
+    source: 'Apple price verified from Apple Store: from $399. Accuracy lineage: Chinoy 2021 tested older Apple Watch Series 3, not Series 11; newer watchOS algorithms may differ.',
+    note: 'Best iPhone smartwatch choice. Good evidence lineage, but do not pretend Series 11 itself has the older study’s exact number.'
+  },
+  {
+    name: 'Apple Watch SE 3', cls: 'watch', price: 249, listPrice: 249, monthly: 0, twoYear: 249,
+    battery: '1d', weight: 'varies', evidence: 'indirect', confidence: 'low',
+    psgAgreement: null, sleepWakeAccuracy: null, sensitivity: null, specificity: null, stageScore: null, tstBiasAbs: null, efficiencyScore: null,
+    source: 'Apple price verified from Apple Store: from $249. Exact PSG validation not found for SE 3 in this session.',
+    note: 'Cheaper Apple path, but accuracy should be inferred from Apple sleep ecosystem rather than directly validated SE 3 numbers.'
+  },
+  {
+    name: 'Google Pixel Watch 3', cls: 'watch', price: 249.99, listPrice: 249.99, monthly: 9.99, twoYear: 489.75,
+    battery: '1d', weight: 'varies', evidence: 'indirect', confidence: 'low',
+    psgAgreement: null, sleepWakeAccuracy: 86, sensitivity: 95, specificity: 45, stageScore: 41, tstBiasAbs: 10, efficiencyScore: 84,
+    source: 'Google Store price verified: from $249.99. Accuracy uses Fitbit lineage because Pixel Watch sleep tracking is Fitbit-based; exact Pixel Watch 3 PSG validation not verified.',
+    note: 'Good Android smartwatch pick. Fitbit lineage is useful, but this is not the same as direct Pixel Watch PSG validation.'
+  },
+  {
+    name: 'Garmin Forerunner 165', cls: 'watch', price: 199.99, listPrice: 249.99, monthly: 0, twoYear: 199.99,
+    battery: '11d', weight: '39g', evidence: 'indirect', confidence: 'low',
+    psgAgreement: null, sleepWakeAccuracy: 67, sensitivity: 90, specificity: 30, stageScore: 30, tstBiasAbs: 30, efficiencyScore: null,
+    source: 'Garmin price verified from Garmin: sale $199.99. Accuracy lineage is older Garmin Vivosmart 4 / broader Garmin validations, not direct Forerunner 165 PSG.',
+    note: 'Excellent sports watch value. Sleep staging is not why you buy Garmin.'
+  },
+  {
+    name: 'Amazfit Band 7', cls: 'band', price: 49.99, listPrice: 49.99, monthly: 0, twoYear: 49.99,
+    battery: '18d', weight: '28g', evidence: 'indirect', confidence: 'low',
+    psgAgreement: null, sleepWakeAccuracy: null, sensitivity: null, specificity: null, stageScore: null, tstBiasAbs: null, efficiencyScore: null,
+    source: 'Amazon price observed $49.99. Little direct PSG validation found for this exact model; treat as rough trend tracker.',
+    note: 'Fine budget hardware. Weak accuracy evidence compared with Fitbit/Oura/Apple.'
+  },
+  {
+    name: 'WHOOP 4.0', cls: 'band', price: 0, listPrice: 0, monthly: 20, twoYear: 480,
+    battery: '4.5d', weight: '15g', evidence: 'direct', confidence: 'medium',
+    psgAgreement: 64, sleepWakeAccuracy: 64, sensitivity: 89, specificity: 33, stageScore: 34, tstBiasAbs: 40, efficiencyScore: null,
+    source: 'CircaTest compare: PSG agreement 64%, included hardware, $20/mo, 2-year $480. Related to Chinoy 2021 WHOOP 3/4 lineage and validation summaries.',
+    note: 'Recovery coaching ecosystem, not the price-to-accuracy winner. Expensive for sleep accuracy alone.'
+  }
+];
+
+const metrics = {
+  sleepWakeAccuracy: { label: 'Sleep/wake accuracy (%)', suffix: '%', higher: true, desc: 'How often the device classifies asleep vs awake correctly versus PSG or close reference.' },
+  psgAgreement: { label: 'Published PSG agreement (%)', suffix: '%', higher: true, desc: 'Headline PSG agreement where CircaTest exposes one directly.' },
+  sensitivity: { label: 'Sleep sensitivity (%)', suffix: '%', higher: true, desc: 'How well it detects sleep. Often high even on cheap trackers.' },
+  specificity: { label: 'Wake specificity (%)', suffix: '%', higher: true, desc: 'How well it detects wake. This is the common failure mode.' },
+  stageScore: { label: 'Sleep stage score / kappa-like (%)', suffix: '%', higher: true, desc: 'Rough normalized staging evidence. Lower means REM/deep/light are shaky.' },
+  tstBiasAbs: { label: 'Total sleep time error, abs minutes', suffix: ' min', higher: false, desc: 'Approximate absolute bias where available. Lower is better.' },
+  twoYear: { label: '2-year cost ($)', suffix: '$', higher: false, desc: 'Device price plus subscription assumptions over two years.' }
+};
+let chart, selected = null, activeTab = 'accuracy';
+
+function fmt(v, suffix='') {
+  if (v === null || v === undefined || Number.isNaN(v)) return '—';
+  if (suffix === '$') return '$' + Number(v).toLocaleString(undefined,{maximumFractionDigits:2});
+  return Number(v).toLocaleString(undefined,{maximumFractionDigits: suffix===' min'?0:1}) + suffix;
+}
+function getFiltered() {
+  const cls = document.getElementById('classFilter').value;
+  const ev = document.getElementById('evidenceFilter').value;
+  const max = parseFloat(document.getElementById('maxCost').value) || 999999;
+  return devices.filter(d => (cls==='all'||d.cls===cls) && (ev==='all'||d.evidence===ev || (ev==='indirect' && d.evidence==='direct')) && d.twoYear <= max);
+}
+function certaintyClass(c){ return c==='medium'?'med':c==='low'?'low':c==='high'?'high':'unknown'; }
+function update() {
+  const metric = document.getElementById('metricSelect').value;
+  const meta = metrics[metric];
+  const shown = getFiltered();
+  const withMetric = shown.filter(d => d[metric] !== null && d[metric] !== undefined);
+  document.getElementById('chartTitle').textContent = `Price vs ${meta.label}`;
+  document.getElementById('count').textContent = shown.length;
+  const cheapest = shown.slice().sort((a,b)=>a.twoYear-b.twoYear)[0];
+  document.getElementById('cheapest').textContent = cheapest ? cheapest.name.replace('Apple Watch ','AW ') : '-';
+  const highest = withMetric.slice().sort((a,b)=> meta.higher ? b[metric]-a[metric] : a[metric]-b[metric])[0];
+  document.getElementById('highest').textContent = highest ? `${highest.name.split(' ')[0]} ${fmt(highest[metric], meta.suffix)}` : '—';
+  const best = withMetric.map(d => ({d, value: metric === 'tstBiasAbs' || metric === 'twoYear' ? (1/(d[metric]+1))/(Math.max(d.twoYear,1)/100) : d[metric]/Math.max(d.twoYear,1)})).sort((a,b)=>b.value-a.value)[0];
+  document.getElementById('bestValue').textContent = best ? best.d.name.split(' ').slice(0,2).join(' ') : '—';
+
+  const datasets = [{
+    label: meta.label,
+    data: withMetric.map(d => ({x: d.twoYear, y: d[metric], device: d.name, raw: d})),
+    pointRadius: ctx => selected === ctx.raw.device ? 10 : 7,
+    pointHoverRadius: 11,
+    backgroundColor: ctx => {
+      const c = ctx.raw.raw.confidence;
+      return c === 'medium' ? 'rgba(245,197,66,.88)' : c === 'low' ? 'rgba(251,113,133,.82)' : 'rgba(52,211,153,.86)';
+    },
+    borderColor: 'rgba(255,255,255,.9)', borderWidth: 1.5
+  }];
+  const ctx = document.getElementById('scatterChart').getContext('2d');
+  if (chart) chart.destroy();
+  chart = new Chart(ctx, {
+    type: 'scatter', data: { datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      onClick: (evt, els) => { if (els.length) { selected = datasets[0].data[els[0].index].device; renderList(); renderTable(); update(); }},
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: c => `${c.raw.device}: 2yr ${fmt(c.raw.x,'$')} · ${meta.label} ${fmt(c.raw.y, meta.suffix)}` } },
+        title: { display: true, text: meta.desc, color: '#aab3cf', font: { size: 13 } }
+      },
+      scales: {
+        x: { title: {display:true, text:'2-year cost, USD', color:'#dbeafe'}, ticks:{color:'#aab3cf', callback:v=>'$'+v}, grid:{color:'rgba(255,255,255,.08)'} },
+        y: { title: {display:true, text:meta.label, color:'#dbeafe'}, ticks:{color:'#aab3cf'}, grid:{color:'rgba(255,255,255,.08)'} }
+      }
+    }
+  });
+  renderList(); renderTable();
+}
+function renderList(){
+  const metric = document.getElementById('metricSelect').value, meta = metrics[metric];
+  const shown = getFiltered().slice().sort((a,b)=>a.twoYear-b.twoYear);
+  document.getElementById('deviceList').innerHTML = shown.map(d => `<div class="device-card ${selected===d.name?'active':''}" onclick="selected='${d.name.replace(/'/g,"\\'")}'; update();"><div class="device-row"><strong>${d.name}</strong><span class="pill ${certaintyClass(d.confidence)}">${d.confidence}</span></div><div class="device-row"><span class="small">${d.cls} · ${d.battery} battery</span><span class="price">${fmt(d.twoYear,'$')}</span></div><div class="small">${meta.label}: <strong>${fmt(d[metric], meta.suffix)}</strong></div></div>`).join('');
+}
+function renderTable(){
+  const shown = getFiltered();
+  if (activeTab === 'accuracy') {
+    document.getElementById('tabContent').innerHTML = `<table><thead><tr><th>Device</th><th>Sleep/wake</th><th>PSG agreement</th><th>Sensitivity</th><th>Specificity</th><th>Stage score</th><th>TST error</th><th>Confidence</th><th>Interpretation</th></tr></thead><tbody>${shown.map(d=>`<tr><td><strong>${d.name}</strong></td><td>${fmt(d.sleepWakeAccuracy,'%')}</td><td>${fmt(d.psgAgreement,'%')}</td><td>${fmt(d.sensitivity,'%')}</td><td>${fmt(d.specificity,'%')}</td><td>${fmt(d.stageScore,'%')}</td><td>${fmt(d.tstBiasAbs,' min')}</td><td><span class="pill ${certaintyClass(d.confidence)}">${d.confidence}</span></td><td class="muted">${d.note}</td></tr>`).join('')}</tbody></table>`;
+  } else if (activeTab === 'cost') {
+    document.getElementById('tabContent').innerHTML = `<table><thead><tr><th>Device</th><th>Street price</th><th>List price</th><th>Monthly</th><th>2-year cost</th><th>Battery</th><th>Weight</th><th>Cost bar</th></tr></thead><tbody>${shown.map(d=>`<tr><td><strong>${d.name}</strong></td><td>${fmt(d.price,'$')}</td><td>${fmt(d.listPrice,'$')}</td><td>${d.monthly?fmt(d.monthly,'$')+'/mo':'Free'}</td><td>${fmt(d.twoYear,'$')}</td><td>${d.battery}</td><td>${d.weight}</td><td><div class="bar"><span style="width:${Math.min(100,d.twoYear/6)}%"></span></div></td></tr>`).join('')}</tbody></table>`;
+  } else {
+    document.getElementById('tabContent').innerHTML = `<table><thead><tr><th>Device</th><th>Evidence type</th><th>Source note</th><th>Big caveat</th></tr></thead><tbody>${shown.map(d=>`<tr><td><strong>${d.name}</strong></td><td>${d.evidence}</td><td class="source">${d.source}</td><td class="muted">${d.note}</td></tr>`).join('')}</tbody></table>`;
+  }
+}
+
+Object.entries(metrics).forEach(([k,v]) => document.getElementById('metricSelect').insertAdjacentHTML('beforeend', `<option value="${k}">${v.label}</option>`));
+document.getElementById('metricSelect').value = 'sleepWakeAccuracy';
+['metricSelect','classFilter','evidenceFilter','maxCost'].forEach(id => document.getElementById(id).addEventListener('input', update));
+document.querySelectorAll('.tab').forEach(btn => btn.addEventListener('click', e => { document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active')); e.target.classList.add('active'); activeTab = e.target.dataset.tab; renderTable(); }));
+update();
+</script>
+</body>
+</html>
