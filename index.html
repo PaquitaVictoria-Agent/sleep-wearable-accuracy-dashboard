@@ -140,7 +140,7 @@
     </section>
 
     <div class="footer">
-      <strong>Method note:</strong> prices are current online prices I observed during this session where possible. Accuracy data is a normalized buyer-facing view from CircaTest pages and the peer-reviewed studies they link, especially Chinoy 2021, Haghayegh 2019, Concheiro-Moscoso 2023, Lee 2025 meta-analysis, and device-specific CircaTest summaries. Unknown values are deliberately left blank rather than filled with fake confidence.
+      <strong>Method note:</strong> prices are current online prices I observed during this session where possible. Accuracy data is a normalized buyer-facing view from CircaTest pages and the peer-reviewed studies they link, especially Chinoy 2021, Haghayegh 2019, Concheiro-Moscoso 2023, Lee 2025 meta-analysis, the CircaTest under-$150 budget tracker guide, and device-specific CircaTest summaries. Unknown values are deliberately left blank rather than filled with fake confidence.
     </div>
   </div>
 
@@ -194,6 +194,28 @@ const devices = [
     psgAgreement: null, sleepWakeAccuracy: 86, sensitivity: 95, specificity: 45, stageScore: 41, tstBiasAbs: 10, efficiencyScore: 84,
     source: 'Google Store price verified: from $249.99. Accuracy uses Fitbit lineage because Pixel Watch sleep tracking is Fitbit-based; exact Pixel Watch 3 PSG validation not verified.',
     note: 'Good Android smartwatch pick. Fitbit lineage is useful, but this is not the same as direct Pixel Watch PSG validation.'
+  },
+
+  {
+    name: 'Amazfit GTR 4', cls: 'watch', price: 130, listPrice: 130, monthly: 0, twoYear: 130,
+    battery: '14d', weight: '52g', evidence: 'indirect', confidence: 'low',
+    psgAgreement: null, sleepWakeAccuracy: null, sensitivity: null, specificity: null, stageScore: null, tstBiasAbs: null, efficiencyScore: null,
+    source: 'CircaTest budget tracker guide: $130, 14-day battery, 52g, SpO2 yes, no subscription. No peer-reviewed PSG sleep-staging validation data listed; Zepp/Amazfit has limited independent validation.',
+    note: 'Best watch-style budget option from the CircaTest under-$150 list. Looks like a normal watch, but heavier for sleep and weaker validation than Fitbit.'
+  },
+  {
+    name: 'Fitbit Inspire 3', cls: 'band', price: 79, listPrice: 99.95, monthly: 9.99, twoYear: 318.76,
+    battery: '10d', weight: '20g', evidence: 'indirect', confidence: 'medium',
+    psgAgreement: null, sleepWakeAccuracy: 86, sensitivity: 95, specificity: 45, stageScore: 41, tstBiasAbs: 10, efficiencyScore: 84,
+    source: 'CircaTest budget tracker guide: $79, 10-day battery, 20g. No Inspire 3 specific PSG validation; uses Fitbit algorithm family, with Charge 5 kappa 0.41 in Schyvens 2025 and Fitbit meta sleep/wake range 81-91%.',
+    note: 'Probably the best cheap Fitbit if you only care about sleep. Similar sleep algorithm family to Charge, less hardware fluff.'
+  },
+  {
+    name: 'Garmin Vivosmart 5', cls: 'band', price: 130, listPrice: 130, monthly: 0, twoYear: 130,
+    battery: '7d', weight: '24.5g', evidence: 'indirect', confidence: 'low',
+    psgAgreement: null, sleepWakeAccuracy: 67, sensitivity: 90, specificity: 30, stageScore: 21, tstBiasAbs: 30, efficiencyScore: null,
+    source: 'CircaTest budget tracker guide: $130, 7-day battery, 24.5g, SpO2 yes, Garmin Connect free. No Vivosmart 5 specific PSG study; Vivosmart 4 kappa 0.21 in Schyvens 2025.',
+    note: 'Best for people already in Garmin. Body Battery is useful, but sleep-staging evidence is weak versus Fitbit.'
   },
   {
     name: 'Garmin Forerunner 165', cls: 'watch', price: 199.99, listPrice: 249.99, monthly: 0, twoYear: 199.99,
